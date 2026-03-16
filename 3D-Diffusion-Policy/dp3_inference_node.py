@@ -90,6 +90,8 @@ class DP3InferenceNode(Node):
         state = self._extract_state(joint_msg)
         if state is None:
             return
+        
+        # 这里会触发下面的 _pointcloud_to_array 和修复后的 _points_to_float_array
         pc = self._pointcloud_to_array(pc_msg)
         if pc is None:
             return
@@ -157,7 +159,7 @@ class DP3InferenceNode(Node):
         self.publish_arm_control(arm_action)
         self.publish_gripper_control(gripper_action)
 
-    # ---------------- 原始数据处理方法保持不变 ----------------
+    # ---------------- 原始数据处理方法 ----------------
     def publish_arm_control(self, arm_action):
         msg = Jointpos()
         msg.joint = arm_action.tolist()
@@ -173,7 +175,6 @@ class DP3InferenceNode(Node):
         self.pub_gripper_cmd.publish(msg)
 
     def _extract_state(self, joint_msg: JointState) -> np.ndarray:
-        # [代码省略，与你原先的逻辑完全一致]
         if self.expected_joint_names:
             name_to_idx = {name: i for i, name in enumerate(joint_msg.name)}
             try:
@@ -187,7 +188,6 @@ class DP3InferenceNode(Node):
         return np.array(joint_msg.position[:6], dtype=np.float32)
 
     def _pointcloud_to_array(self, msg: PointCloud2) -> np.ndarray:
-        # [代码省略，与你原先的逻辑完全一致]
         field_names = [f.name for f in msg.fields]
         points_gen = pc2.read_points(msg, field_names=("x", "y", "z"), skip_nans=True)
         xyz_array = self._points_to_float_array(points_gen, ("x", "y", "z"))
@@ -196,15 +196,28 @@ class DP3InferenceNode(Node):
         pc_array = xyz_array
         return self._adapt_point_cloud_shape(pc_array)
 
+    # ================= 修改的核心部分 =================
     @staticmethod
     def _points_to_float_array(points_gen, ordered_names) -> np.ndarray:
-        raw = np.array(list(points_gen))
-        if raw.size == 0: return np.zeros((0, len(ordered_names)), dtype=np.float32)
-        arr = np.asarray(raw, dtype=np.float32)
+        # 将 generator 转换为列表
+        raw = list(points_gen)
+        if len(raw) == 0: 
+            return np.zeros((0, len(ordered_names)), dtype=np.float32)
+            
+        raw_np = np.array(raw)
+        
+        # 检查是否为 ROS 2 的结构化数组 (包含字段名如 'x', 'y', 'z')
+        if raw_np.dtype.names:
+            # 安全地提取每一个字段并组合成平坦的 2D float32 数组
+            arr = np.column_stack([raw_np[f] for f in ordered_names]).astype(np.float32)
+        else:
+            # 普通数组后备处理方案
+            arr = np.asarray(raw_np, dtype=np.float32)
+            
         return arr.reshape(-1, len(ordered_names)) if arr.ndim == 1 else arr
+    # ===================================================
 
     def _adapt_point_cloud_shape(self, pc_array: np.ndarray) -> np.ndarray:
-        # [代码省略，与你原先的逻辑完全一致]
         cur_points = pc_array.shape[0]
         if cur_points > self.pc_num_points:
             idx = np.random.choice(cur_points, self.pc_num_points, replace=False)
@@ -218,7 +231,7 @@ class DP3InferenceNode(Node):
 def main(args=None):
     rclpy.init(args=args)
     
-    ckpt_path = Path("3D-Diffusion-Policy/data/outputs/real_simple_fruit-real_dp3-0309_seed0/checkpoints/epoch=0400-test_mean_score=-0.001.ckpt")
+    ckpt_path = Path("3D-Diffusion-Policy/data/outputs/real_fruit-idp3-0316_seed0/checkpoints/latest.ckpt")
     cfg_path = ckpt_path.parent.parent / ".hydra" / "config.yaml"
     
     if not cfg_path.exists():

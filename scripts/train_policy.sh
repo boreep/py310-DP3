@@ -6,7 +6,7 @@
 # 后缀: 算法名 任务名 实验附加信息(时间) 随机种子 使用的GPU_id
 # bash scripts/train_policy.sh real_simple_dp3 real_fruit 0308 0 0
 
-# bash scripts/train_policy.sh idp3 real_fruit 0316 0 0
+# bash scripts/train_policy.sh simple_idp3 real_fruit 0316 0 0
 
 DEBUG=False
 save_ckpt=True

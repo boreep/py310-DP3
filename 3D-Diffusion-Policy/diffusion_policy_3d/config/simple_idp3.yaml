@@ -1,5 +1,6 @@
 defaults:
   - task: real_fruit
+  - _self_
 
 name: train_idp3
 
@@ -18,22 +19,28 @@ obs_as_global_cond: True
 use_image: false
 
 policy:
-  _target_: diffusion_policy_3d.policy.dp3.DP3
+  _target_: diffusion_policy_3d.policy.simple_dp3.SimpleDP3
   use_point_crop: true
   condition_type: film
   use_down_condition: true
   use_mid_condition: true
   use_up_condition: true
-  use_image: false
   
   diffusion_step_embed_dim: 128
-  down_dims: [256, 512, 1024]
-  
+  down_dims:
+  - 128
+  - 256
+  - 384
+  crop_shape:
+  - 80
+  - 80
+  # encoder_output_dim: 128
   horizon: ${horizon}
   kernel_size: 5
   n_action_steps: ${n_action_steps}
   n_groups: 8
   n_obs_steps: ${n_obs_steps}
+
 
   noise_scheduler:
     _target_: diffusers.schedulers.scheduling_ddim.DDIMScheduler
@@ -74,14 +81,14 @@ ema:
   max_value: 0.9999
 
 dataloader:
-  batch_size: 128
+  batch_size: 256
   num_workers: 8
   shuffle: True
   pin_memory: True
   persistent_workers: False
 
 val_dataloader:
-  batch_size: 128
+  batch_size: 256
   num_workers: 8
   shuffle: False
   pin_memory: True
@@ -101,11 +108,11 @@ training:
   resume: True
   lr_scheduler: cosine
   lr_warmup_steps: 500
-  num_epochs: 1000
+  num_epochs: 301
   gradient_accumulate_every: 1
   use_ema: True
   rollout_every: 400
-  checkpoint_every: 100
+  checkpoint_every: 200
   val_every: 100
   sample_every: 5
   max_train_steps: null

@@ -1,0 +1,19 @@
+meta_info:
+  created_at: '2026-03-16 19:31:01'
+  task_name: default_task
+  sampling_rate: 20
+  config_snapshot:
+    base_dir: dataset
+    task_name: default_task
+    sampling_rate: 20
+    camera:
+      image: /color/image_raw
+      point: /sampled_points
+    right_arm:
+      joint_cmd: /rm_driver/movej_canfd_cmd
+      joint_state: /joint_states
+      arm_state: /rm_driver/udp_arm_position
+      gripper_cmd: /gripper_cmd
+      ik_target: /ik_target_pose
+dataset_structure: {}
+episodes: []
