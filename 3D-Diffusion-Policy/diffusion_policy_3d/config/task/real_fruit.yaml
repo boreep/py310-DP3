@@ -1,6 +1,6 @@
-name: example_task
+name: real_fruit
 
-task_name: test
+task_name: fruit
 
 shape_meta: &shape_meta
   # acceptable types: rgb, low_dim
