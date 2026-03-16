@@ -1,0 +1,27 @@
+name: example_task
+
+task_name: test
+
+shape_meta: &shape_meta
+  # acceptable types: rgb, low_dim
+  obs:
+    point_cloud:
+      shape: [541, 3]
+      type: point_cloud
+    agent_pos:
+      shape: [32]
+      type: low_dimx
+  action:
+    shape: [25]
+
+env_runner: null
+
+dataset:
+  _target_: diffusion_policy_3d.dataset.realrobot_dataset.RealRobotDataset
+  zarr_path: data/training_data_example.zarr
+  horizon: ${horizon}
+  pad_before: ${eval:'${n_obs_steps}-1'}
+  pad_after: ${eval:'${n_action_steps}-1'}
+  seed: 42
+  val_ratio: 0.02
+  max_train_episodes: 90
